@@ -1,0 +1,109 @@
+import ply.lex as lex
+
+
+tokens = [
+    "COLON",
+    "RIGHT_ARROW_1",
+    "RIGHT_ARROW_2",
+    "LBRACE",
+    "RBRACE",
+    "INHERIT",
+    "EOL",
+    "STRING",
+    "STEREO",
+    "ACTOR_TEXT",
+    "USE_CASE_TEXT",
+    "ID"
+]
+
+
+reserved = {
+    'actor': 'ACTOR',
+    'as': 'AS',
+    'usecase': 'USECASE',
+    'package': 'PACKAGE',
+    'includes': 'INCLUDES',
+    'extends': 'EXTENDS',
+    '@startuml': 'STARTUML',
+    '@enduml': 'ENDUML'
+}
+
+tokens += list(reserved.values())
+
+
+
+def t_COLON(t):
+    r':'
+    return t
+
+def t_RIGHT_ARROW_1(t):
+    r'--?>'
+    return t
+
+def t_RIGHT_ARROW_2(t):
+    r'\.> |\.\.>'
+    return t
+
+def t_LBRACE(t):
+    r'\{'
+    return t
+
+def t_RBRACE(t):
+    r'\}'
+    return t
+
+def t_INHERIT(t):
+    r'<\|--'
+    return t
+
+def t_EOL(t):
+    r'\n+'
+    t.lexer.lineno += len(t.value)
+    return t
+
+def t_STRING(t):
+    r'".*?"'
+    return t
+
+def t_STEREO(t):
+    r'<<.*?>>'
+    return t
+
+def t_ACTOR_TEXT(t):
+    r':[a-zA-Z_][a-zA-Z0-9_]*:'
+    return t
+
+def t_USE_CASE_TEXT(t):
+    r'\([a-zA-Z_][a-zA-Z0-9_ ]*\)'
+    return t
+
+def t_ID(t):
+    r'[a-zA-Z_][a-zA-Z0-9_]*'
+    t.type = reserved.get(t.value, 'ID')  
+    return t
+
+
+t_ignore = ' \t'
+
+
+def t_error(t):
+    print(f"Erreur lexicale: Caractère invalide '{t.value[0]}' à la ligne {t.lineno}")
+    t.lexer.skip(1)
+
+
+lexer = lex.lex()
+
+
+if _name_ == "_main_":
+    data = """
+    @startuml test
+    :Main Admin: as Admin <<Not-a-machine>>
+    (Use the application) as Use
+    User <|-- Admin
+    (Start) .> Use : extends
+    User .> Use
+    @enduml
+    """
+    lexer.input(data)
+    for token in lexer:
+        print(token)
