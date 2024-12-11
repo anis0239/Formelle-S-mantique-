@@ -1,0 +1,84 @@
+from ply import yacc
+from ply import lex
+
+precedence = ()  
+
+def p_uml_diagram(p):
+    """
+    uml_diagram : STARTUML elements ENDUML
+    """
+    p[0] = ('uml_diagram', p[2])
+
+def p_elements(p):
+    """
+    elements : elements element
+             | element
+    """
+    if len(p) == 3:
+        p[0] = p[1] + [p[2]]
+    else:
+        p[0] = [p[1]]
+
+def p_element(p):
+    """
+    element : actor
+            | usecase
+            | package
+            | relationship
+    """
+    p[0] = p[1]
+
+def p_actor(p):
+    """
+    actor : ACTOR ID
+          | ACTOR ID AS ID
+          | ACTOR ID AS STRING
+    """
+    if len(p) == 3:
+        p[0] = ('actor', p[2])
+    else:
+        p[0] = ('actor', p[2], p[4])
+
+def p_usecase(p):
+    """
+    usecase : USECASE ID
+            | USECASE ID AS ID
+            | USECASE ID AS STRING
+    """
+    if len(p) == 3:
+        p[0] = ('usecase', p[2])
+    else:
+        p[0] = ('usecase', p[2], p[4])
+
+def p_package(p):
+    """
+    package : PACKAGE ID LBRACE elements RBRACE
+    """
+    p[0] = ('package', p[2], p[4])
+
+def p_relationship(p):
+    """
+    relationship : ID RIGHT_ARROW_1 ID
+                 | ID RIGHT_ARROW_2 ID
+                 | ID INHERIT ID
+                 | ID INCLUDES ID
+                 | ID EXTENDS ID
+    """
+    p[0] = ('relationship', p[1], p[2], p[3])
+
+def p_error(p):
+    if p:
+        raise SyntaxError(f"Syntax error at '{p.value}' (line {p.lineno})")
+    else:
+        raise SyntaxError("Unexpected end of input")
+
+parser = yacc.yacc()
+
+with open("usecase.plantuml") as f:
+    spec = f.read()
+
+try:
+    result = parser.parse(spec, lexer=lexer)
+    print("Parsed result:", result)
+except SyntaxError as e:
+    print(e)
